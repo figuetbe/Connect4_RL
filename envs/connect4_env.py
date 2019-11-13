@@ -13,7 +13,7 @@ import logging
 CODE_MARK_MAP = {0: ' ', 1: 'O', 2: 'X'}
 NO_REWARD = 0
 O_REWARD = 1
-X_REWARD = 1
+X_REWARD = -1
 n_cols = 7
 n_rows = 6
 
@@ -44,9 +44,9 @@ def after_action_state(state, action):
         tuple: New state
     """
 
-    board, mark = state
+    board, mark = state[0].copy(), state[1]
     row = get_row(board, action)
-    board[action, row] = tocode(mark)
+    board[row, action] = tocode(mark)
     return board, next_mark(mark)
 
 
@@ -54,13 +54,15 @@ class Connect4Env(gym.Env):
     metadata = {'render.modes': ['human']}
     symbols = ['O', ' ', 'X']
 
-    def __init__(self, show_number=False):
+    def __init__(self, alpha=0.02, show_number=False):
         self.action_space = spaces.Discrete(7)
         self.observation_space = spaces.Discrete(7*6)  # Grid dimensions
         self.set_start_mark('O')
         self.seed()
         self.reset()
         self.turn = 0
+        self.status = -1
+        self.alpha = alpha
 
     def set_start_mark(self, mark):
         self.start_mark = mark
@@ -76,7 +78,6 @@ class Connect4Env(gym.Env):
             dict: Additional information
         """
         assert self.action_space.contains(action)
-        col = action  # If it starts at 1
 
         if self.done:
             return self._get_obs(), 0, True, None
@@ -84,16 +85,16 @@ class Connect4Env(gym.Env):
         reward = NO_REWARD
 
         # place
+        col = action
         row = get_row(self.board, col)
 
         self.board[row, col] = tocode(self.mark)
         self.turn += 1
+        self.status = check_game_status(self.board, row, col)
 
-        status = check_game_status(self.board, row, col)
-
-        if status >= 0:
+        if self.status >= 0:
             self.done = True
-            if status in [1, 2]:
+            if self.status in [1, 2]:
                 # always called by self
                 reward = O_REWARD if self.mark == 'O' else X_REWARD
 
@@ -106,6 +107,7 @@ class Connect4Env(gym.Env):
         self.turn = 0
         self.mark = self.start_mark
         self.done = False
+        self.status = -1
         return self._get_obs()
 
     def _get_obs(self):
@@ -115,18 +117,16 @@ class Connect4Env(gym.Env):
         if close:
             return
         if mode == 'human':
-            d = {0: ' ', 1: 'O', 2: 'X'}
             for row in range(6):
                 print("\t", end="")
                 for col in range(7):
-                    print("| " + d[self.board[row, col]], end=" ")
+                    print("| " + CODE_MARK_MAP[self.board[row, col]], end=" ")
                 print("|")
             print("\t  _   _   _   _   _   _   _ ")
             print("\t  1   2   3   4   5   6   7 ")
-            print('Turn number:', self.turn)
-
+            
     def show_episode(self, human, episode):
-        self._show_episode(print if human else logging.warning, episode)
+        self._show_episode(print if human else None, episode)
 
     def _show_episode(self, showfn, episode):
         showfn("==== Episode {} ====".format(episode))
@@ -135,22 +135,28 @@ class Connect4Env(gym.Env):
         self._show_turn(print if human else logging.info, mark)
 
     def _show_turn(self, showfn, mark):
-        showfn("{}'s turn.".format(mark))
+        showfn("{}'s turn, step number {}".format(mark, self.turn))
 
     def show_result(self, human, mark, reward):
         self._show_result(print if human else logging.info, mark, reward)
 
     def _show_result(self, showfn, mark, reward):
-        print('Finished')
+        assert self.status >= 0
+        if self.status == 0:
+            showfn("==== Finished: Draw ====")
+        else:
+            msg = "Winner is '{}'!".format(tomark(self.status))
+            showfn("==== Finished: {} ====".format(msg))
+        showfn('')
 
     def available_actions(self):
-        return [col for col in range(7) if get_row(self.board, col) != -1]
+        return [col for col in range(7) if self.board[0, col] == 0]
 
 
 def get_row(board, col):
-    for row in range(5, 0, -1):
+    for row in range(5, -1, -1):
         if board[row, col] == 0:
-            return row      
+            return row
     return -1
 
 
@@ -216,5 +222,3 @@ def check_game_status(board, row, col):
     if isfull(board):
         return 0
     return -1
-
-

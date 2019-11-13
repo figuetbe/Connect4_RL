@@ -18,7 +18,7 @@ class HumanAgent(object):
             if uloc.lower() == 'q':
                 return None
             try:
-                action = int(uloc) - 1
+                action = int(uloc)-1
                 if action not in ava_actions:
                     raise ValueError()
             except ValueError:
@@ -35,7 +35,7 @@ class Computer(object):
     def act(self, ava_actions):
         while True:
             action = random.choice(ava_actions)
-            
+            print(action)
             if action not in ava_actions:
                 raise ValueError()
             else:
