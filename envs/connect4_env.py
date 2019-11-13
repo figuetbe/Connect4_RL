@@ -45,11 +45,9 @@ def after_action_state(state, action):
     """
 
     board, mark = state
-#    nboard = list(board[:])
     row = get_row(board, action)
-    nboard[action, row] = tocode(mark)
-#    nboard = tuple(nboard)
-    return nboard, next_mark(mark)
+    board[action, row] = tocode(mark)
+    return board, next_mark(mark)
 
 
 class Connect4Env(gym.Env):
@@ -62,6 +60,7 @@ class Connect4Env(gym.Env):
         self.set_start_mark('O')
         self.seed()
         self.reset()
+        self.turn = 0
 
     def set_start_mark(self, mark):
         self.start_mark = mark
@@ -88,10 +87,9 @@ class Connect4Env(gym.Env):
         row = get_row(self.board, col)
 
         self.board[row, col] = tocode(self.mark)
+        self.turn += 1
 
         status = check_game_status(self.board, row, col)
-#        logging.debug("check_game_status board {} mark '{}'"
-#                      " status {}".format(self.board, self.mark, status))
 
         if status >= 0:
             self.done = True
@@ -105,6 +103,7 @@ class Connect4Env(gym.Env):
 
     def reset(self):
         self.board = np.zeros((6, 7))
+        self.turn = 0
         self.mark = self.start_mark
         self.done = False
         return self._get_obs()
@@ -116,21 +115,21 @@ class Connect4Env(gym.Env):
         if close:
             return
         if mode == 'human':
-            self._show_board(print)  # NOQA
-            print('')
-#        else:
-#            self._show_board(logging.info)
-#            logging.info('')
+            d = {0: ' ', 1: 'O', 2: 'X'}
+            for row in range(6):
+                print("\t", end="")
+                for col in range(7):
+                    print("| " + d[self.board[row, col]], end=" ")
+                print("|")
+            print("\t  _   _   _   _   _   _   _ ")
+            print("\t  1   2   3   4   5   6   7 ")
+            print('Turn number:', self.turn)
 
     def show_episode(self, human, episode):
         self._show_episode(print if human else logging.warning, episode)
 
     def _show_episode(self, showfn, episode):
         showfn("==== Episode {} ====".format(episode))
-
-    def _show_board(self, showfn):
-        """Draw tictactoe board."""
-        print(self.board)
 
     def show_turn(self, human, mark):
         self._show_turn(print if human else logging.info, mark)
@@ -143,14 +142,6 @@ class Connect4Env(gym.Env):
 
     def _show_result(self, showfn, mark, reward):
         print('Finished')
-#        status = check_game_status(self.board)
-#        assert status >= 0
-#        if status == 0:
-#            showfn("==== Finished: Draw ====")
-#        else:
-#            msg = "Winner is '{}'!".format(tomark(status))
-#            showfn("==== Finished: {} ====".format(msg))
-#        showfn('')
 
     def available_actions(self):
         return [col for col in range(7) if get_row(self.board, col) != -1]
@@ -165,15 +156,20 @@ def get_row(board, col):
 
 def checkWin(board, row, col, marker):
     boardHeight, boardWidth = board.shape
-    
+
     i, j = row, col
 
     # Right_diag:
     if isWin(board, [[i, j], [i-1, j+1], [i-2, j+2], [i-3, j+3]], marker):
         return True
+    if isWin(board, [[i, j], [i+1, j+1], [i+2, j+2], [i+3, j+3]], marker):
+        return True
     # left_diag:
     if isWin(board, [[i, j], [i-1, j-1], [i-2, j-2], [i-3, j-3]], marker):
         return True
+    if isWin(board, [[i, j], [i-1, j+1], [i-2, j+2], [i-3, j+3]], marker):
+        return True
+
     # right:
     if isWin(board, [[i, j], [i, j+1], [i, j+2], [i, j+3]], marker):
         return True
@@ -181,12 +177,12 @@ def checkWin(board, row, col, marker):
     if isWin(board, [[i, j], [i, j-1], [i, j-2], [i, j-3]], marker):
         return True
     # down:
-    if isWin(board, [[i, j], [i-1, j], [i-2, j], [i-3, j]], marker):
+    if isWin(board, [[i, j], [i+1, j], [i+2, j], [i+3, j]], marker):
         return True
     return False
 
+
 def isWin(board, mask, marker):
-    print(mask)
     win = [marker]*4
     min_dim, max_dim = [0, 0], [board.shape[0]-1, board.shape[1]-1]
     if ~np.all([(min_dim[0] <= m[0] <= max_dim[0]) &
@@ -196,7 +192,8 @@ def isWin(board, mask, marker):
     if [board[m[0], m[1]] for m in mask] == win:
         return True
     return False
-    
+
+
 def isfull(board):
     return np.count_nonzero(board) == 42
 
