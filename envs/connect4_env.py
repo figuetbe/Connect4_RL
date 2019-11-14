@@ -9,7 +9,6 @@ import numpy as np
 import logging
 
 
-
 CODE_MARK_MAP = {0: ' ', 1: 'O', 2: 'X'}
 NO_REWARD = 0
 O_REWARD = 1
@@ -43,13 +42,11 @@ def after_action_state(state, action):
     Returns:
         tuple: New state
     """
-
     board, mark = state
     nboard = np.array(board)
     row = get_row(nboard, action)
     nboard[row, action] = tocode(mark)
-    nboard = tuple(list(nboard))
-    return board, next_mark(mark)
+    return nboard, next_mark(mark)
 
 
 class Connect4Env(gym.Env):
@@ -113,7 +110,7 @@ class Connect4Env(gym.Env):
         return self._get_obs()
 
     def _get_obs(self):
-        return tuple(self.board), self.mark
+        return self.board, self.mark
 
     def render(self, mode='human', close=False):
         if close:

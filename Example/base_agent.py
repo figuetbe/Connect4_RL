@@ -27,7 +27,7 @@ class BaseAgent(object):
         return random.choice(ava_actions)
 
 
-def play(max_episode=10):
+def play(max_episode=3):
     episode = 0
     start_mark = 'O'
     env = Connect4Env()
