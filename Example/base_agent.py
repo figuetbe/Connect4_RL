@@ -19,8 +19,8 @@ class BaseAgent(object):
         for action in ava_actions:
             nstate = after_action_state(state, action)
             col = action
-            row = get_row(nstate[0], col)
-            gstatus = check_game_status(nstate[0], row, col)
+            row = get_row(np.array(nstate[0]), col)
+            gstatus = check_game_status(np.array(nstate[0]), row, col)
             if gstatus > 0:
                 if tomark(gstatus) == self.mark:
                     return action

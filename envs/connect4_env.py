@@ -44,9 +44,11 @@ def after_action_state(state, action):
         tuple: New state
     """
 
-    board, mark = state[0].copy(), state[1]
-    row = get_row(board, action)
-    board[row, action] = tocode(mark)
+    board, mark = state
+    nboard = np.array(board)
+    row = get_row(nboard, action)
+    nboard[row, action] = tocode(mark)
+    nboard = tuple(list(nboard))
     return board, next_mark(mark)
 
 
@@ -111,7 +113,7 @@ class Connect4Env(gym.Env):
         return self._get_obs()
 
     def _get_obs(self):
-        return self.board, self.mark
+        return tuple(self.board), self.mark
 
     def render(self, mode='human', close=False):
         if close:
@@ -221,4 +223,26 @@ def check_game_status(board, row, col):
         return 2
     if isfull(board):
         return 0
+    return -1
+
+def check_game_status2(board):
+    """Return game status by current board status.
+    Args:
+        board (list): Current board state
+    Returns:
+        int:
+            -1: game in progress
+            0: draw game,
+            1 or 2 for finished game(winner mark code).
+
+    """
+    board = np.array(board)
+    for i in range(7):
+        for j in range(6):
+            if checkWin(board, j, i, 1):
+                return 1
+            if checkWin(board, j, i, 2):
+                return 2
+            if isfull(board):
+                return 0
     return -1
