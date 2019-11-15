@@ -165,7 +165,7 @@ def checkWin(board, row, col, marker):
     i, j = row, col
 
     # Right_diag:
-    if isWin(board, [[i, j], [i-1, j+1], [i-2, j+2], [i-3, j+3]], marker):
+    if isWin(board, [[i, j], [i+1, j-1], [i+2, j-2], [i+3, j-3]], marker):
         return True
     if isWin(board, [[i, j], [i+1, j+1], [i+2, j+2], [i+3, j+3]], marker):
         return True
