@@ -5,7 +5,6 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 import numpy as np
-
 import logging
 
 
@@ -123,30 +122,7 @@ class Connect4Env(gym.Env):
                 print("|")
             print("\t  _   _   _   _   _   _   _ ")
             print("\t  1   2   3   4   5   6   7 ")
-            
-    def show_episode(self, human, episode):
-        self._show_episode(print if human else None, episode)
-
-    def _show_episode(self, showfn, episode):
-        showfn("==== Episode {} ====".format(episode))
-
-    def show_turn(self, human, mark):
-        self._show_turn(print if human else logging.info, mark)
-
-    def _show_turn(self, showfn, mark):
-        showfn("{}'s turn, step number {}".format(mark, self.turn))
-
-    def show_result(self, human, mark, reward):
-        self._show_result(print if human else logging.info, mark, reward)
-
-    def _show_result(self, showfn, mark, reward):
-        assert self.status >= 0
-        if self.status == 0:
-            showfn("==== Finished: Draw ====")
-        else:
-            msg = "Winner is '{}'!".format(tomark(self.status))
-            showfn("==== Finished: {} ====".format(msg))
-        showfn('')
+            print("{}'s turn, step number {}".format(self.mark, self.turn))
 
     def available_actions(self):
         return [col for col in range(7) if self.board[0, col] == 0]
@@ -174,7 +150,6 @@ def checkWin(board, row, col, marker):
         return True
     if isWin(board, [[i, j], [i-1, j+1], [i-2, j+2], [i-3, j+3]], marker):
         return True
-
     # right:
     if isWin(board, [[i, j], [i, j+1], [i, j+2], [i, j+3]], marker):
         return True
@@ -221,6 +196,7 @@ def check_game_status(board, row, col):
     if isfull(board):
         return 0
     return -1
+
 
 def check_game_status2(board):
     """Return game status by current board status.
